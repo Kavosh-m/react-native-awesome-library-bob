@@ -7,3 +7,7 @@ const AwesomeLibraryBobHybridObject =
 export function multiply(a: number, b: number): number {
   return AwesomeLibraryBobHybridObject.multiply(a, b);
 }
+
+export function sum(a: number, b: number): number {
+  return AwesomeLibraryBobHybridObject.sum(a, b);
+}

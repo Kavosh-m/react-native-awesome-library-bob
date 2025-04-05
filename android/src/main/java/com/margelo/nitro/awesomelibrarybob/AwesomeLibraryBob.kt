@@ -7,4 +7,8 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
   override fun multiply(a: Double, b: Double): Double {
     return a * b
   }
+
+  override fun sum(a: Double, b: Double): Double {
+    return a + b
+  }
 }
