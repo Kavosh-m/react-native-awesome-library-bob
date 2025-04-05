@@ -11,3 +11,11 @@ export function multiply(a: number, b: number): number {
 export function sum(a: number, b: number): number {
   return AwesomeLibraryBobHybridObject.sum(a, b);
 }
+
+export function isBluetoothClassicFeatureAvailable(): boolean {
+  return AwesomeLibraryBobHybridObject.isBluetoothClassicFeatureAvailable();
+}
+
+export function isBluetoothOn(): boolean {
+  return AwesomeLibraryBobHybridObject.isBluetoothOn();
+}
