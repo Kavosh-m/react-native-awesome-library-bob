@@ -1,0 +1,17 @@
+{
+  "cxxNamespace": ["awesomelibrarybob"],
+  "ios": {
+    "iosModuleName": "AwesomeLibraryBob"
+  },
+  "android": {
+    "androidNamespace": ["awesomelibrarybob"],
+    "androidCxxLibName": "awesomelibrarybob"
+  },
+  "autolinking": {
+    "AwesomeLibraryBob": {
+      "swift": "AwesomeLibraryBob",
+      "kotlin": "AwesomeLibraryBob"
+    }
+  },
+  "ignorePaths": ["node_modules"]
+}
