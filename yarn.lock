@@ -10544,6 +10544,7 @@ __metadata:
     react-native: 0.78.2
     react-native-builder-bob: ^0.38.3
     react-native-nitro-modules: ^0.22.1
+    react-native-permissions: 5.3.0
   languageName: unknown
   linkType: soft
 
@@ -10621,6 +10622,20 @@ __metadata:
     react: "*"
     react-native: "*"
   checksum: 0a87d0aa8b901e4ad7b19f00c5b27048dd70c44345e9f94ddde98ab0f53394f612351f820ec798cb8b697ec2d10b99c1848b8456e20a53466258ac1cdac86daf
+  languageName: node
+  linkType: hard
+
+"react-native-permissions@npm:5.3.0":
+  version: 5.3.0
+  resolution: "react-native-permissions@npm:5.3.0"
+  peerDependencies:
+    react: ">=18.1.0"
+    react-native: ">=0.70.0"
+    react-native-windows: ">=0.70.0"
+  peerDependenciesMeta:
+    react-native-windows:
+      optional: true
+  checksum: 0896ed6919062a57b79c54d3de0d14a515ada9be87b5f65295e728ee23706430d99d45e48b8d45caad2d8f5eb42d1bd53cb213ff645ebec2117c94aadd35bfe8
   languageName: node
   linkType: hard
 
