@@ -7,6 +7,10 @@ import type {
 const AwesomeLibraryBobHybridObject =
   NitroModules.createHybridObject<AwesomeLibraryBob>('AwesomeLibraryBob');
 
+export function getScannedDevices() {
+  return AwesomeLibraryBobHybridObject.getScannedDevices();
+}
+
 export function isBluetoothClassicFeatureAvailable(): boolean {
   return AwesomeLibraryBobHybridObject.isBluetoothClassicFeatureAvailable();
 }
@@ -21,4 +25,12 @@ export function enableBluetooth(): Promise<void> {
 
 export function getPairedDevices(): TBluetoothDevice[] {
   return AwesomeLibraryBobHybridObject.getPairedDevices();
+}
+
+export function startScan(): void {
+  return AwesomeLibraryBobHybridObject.startScan();
+}
+
+export function stopScan(): void {
+  return AwesomeLibraryBobHybridObject.stopScan();
 }

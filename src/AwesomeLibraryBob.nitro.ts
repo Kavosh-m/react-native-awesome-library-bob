@@ -9,8 +9,11 @@ export type TBluetoothDevice = {
 
 export interface AwesomeLibraryBob
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
+  getScannedDevices(): TBluetoothDevice[];
   isBluetoothClassicFeatureAvailable(): boolean;
   isBluetoothOn(): boolean;
   enableBluetooth(): Promise<void>;
   getPairedDevices(): TBluetoothDevice[];
+  startScan(): void;
+  stopScan(): void;
 }
