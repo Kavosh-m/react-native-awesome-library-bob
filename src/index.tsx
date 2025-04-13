@@ -27,8 +27,10 @@ export function getPairedDevices(): TBluetoothDevice[] {
   return AwesomeLibraryBobHybridObject.getPairedDevices();
 }
 
-export function startScan(): void {
-  return AwesomeLibraryBobHybridObject.startScan();
+export function startScan(
+  fetchRemoteDevices: (devices: TBluetoothDevice[]) => void
+): void {
+  return AwesomeLibraryBobHybridObject.startScan(fetchRemoteDevices);
 }
 
 export function stopScan(): void {

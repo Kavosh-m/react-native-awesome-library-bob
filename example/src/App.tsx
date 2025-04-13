@@ -20,6 +20,7 @@ const result4 = isBluetoothOn();
 
 export default function App() {
   const [pairedDevices, setPairedDevices] = useState<TBluetoothDevice[]>([]);
+  const [scannedDevices, setScannedDevices] = useState<TBluetoothDevice[]>([]);
 
   console.log(getScannedDevices());
 
@@ -38,7 +39,7 @@ export default function App() {
     handleBluetoothConnectPermission(() => {
       const pairedDevicess = getPairedDevices();
       setPairedDevices(() => pairedDevicess);
-      console.log('Paired devices:', JSON.stringify(pairedDevicess, null, 2));
+      // console.log('Paired devices:', JSON.stringify(pairedDevicess, null, 2));
       // console.log('heyyyyyyyyyyyyyyyyyy');
     });
   };
@@ -46,7 +47,10 @@ export default function App() {
   const handleStartScanDevices = () => {
     handleBluetoothConnectPermission(() => {
       handleBluetoothScanPermission(() => {
-        startScan();
+        startScan((devices) => {
+          console.log('Scanned devices:', JSON.stringify(devices, null, 2));
+          setScannedDevices(() => devices);
+        });
       });
     });
   };
@@ -84,11 +88,11 @@ export default function App() {
       )}
 
       {/**list of scanned devices */}
-      {getScannedDevices()?.length > 0 && (
+      {scannedDevices?.length > 0 && (
         <View style={styles.flexWrapper}>
           <ScrollView style={styles.flexWrapper}>
             <Text style={[styles.text, styles.title]}>Scanned Devices:</Text>
-            {getScannedDevices().map((device, index) => (
+            {scannedDevices.map((device, index) => (
               <View key={index} style={styles.deviceWrapper}>
                 <Text style={styles.text}>{`Device Name: ${device.name}`}</Text>
                 <Text

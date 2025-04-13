@@ -19,6 +19,9 @@ import android.util.Log
 @DoNotStrip
 class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
 
+  override val memorySize: Long
+    get() = 15
+
   val appContext = NitroModules.applicationContext
   val packageManager: PackageManager = appContext?.packageManager!!
   val bluetoothManager: BluetoothManager = appContext?.getSystemService(BluetoothManager::class.java)!!
@@ -27,9 +30,8 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
     // Device doesn't support Bluetooth
   //}
 
-
-
-  private var devicesFound = mutableListOf<TBluetoothDevice>()
+  private var devicesFound = mutableSetOf<TBluetoothDevice>()
+  lateinit var onChangedScannedDevices: (devices: Array<TBluetoothDevice>) -> Unit
 
   override fun getScannedDevices(): Array<TBluetoothDevice> {
     return devicesFound.toTypedArray()
@@ -109,8 +111,8 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
       when(action) {
         BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
           Log.d("DISCOVERY", "Bluetooth Scanning started...")
-          val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-          appContext?.registerReceiver(receiver, filter)
+          /*val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+          appContext?.registerReceiver(receiver, filter)*/
         }
       }
     }
@@ -132,12 +134,14 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
 
           devicesFound.add(
             TBluetoothDevice(
-              name = device.name,
-              macAddress = device.address,
+              name = device?.name ?: "-No name-",
+              macAddress = device.address ?: "-No mac address-",
               type = device.type.toDouble(),
               alias = device.alias
             )
           )
+
+          onChangedScannedDevices(devicesFound.toTypedArray())
 
 //          Log.d("DEVICE_FOUND", "Name => ${deviceName} *** MacAddress => ${deviceHardwareAddress}")
         }
@@ -145,15 +149,17 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
     }
   }
 
-  override fun startScan(): Unit {
+  override fun startScan(fetchRemoteDevices: (devices: Array<TBluetoothDevice>) -> Unit) {
 //      Log.d("SCAN_RES", "res is ==> ${bluetoothAdapter?.startDiscovery()}")
+    onChangedScannedDevices = fetchRemoteDevices
+
     bluetoothAdapter?.startDiscovery()
 
     val filterStart = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
     appContext?.registerReceiver(receiverStart, filterStart)
 
-    /*val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-    appContext?.registerReceiver(receiver, filter)*/
+    val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
+    appContext?.registerReceiver(receiver, filter)
 
   }
 

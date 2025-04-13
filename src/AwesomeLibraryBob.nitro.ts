@@ -14,6 +14,6 @@ export interface AwesomeLibraryBob
   isBluetoothOn(): boolean;
   enableBluetooth(): Promise<void>;
   getPairedDevices(): TBluetoothDevice[];
-  startScan(): void;
+  startScan(fetchRemoteDevices: (devices: TBluetoothDevice[]) => void): void;
   stopScan(): void;
 }
