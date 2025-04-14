@@ -6,7 +6,6 @@ import {
   getPairedDevices,
   startScan,
   stopScan,
-  getScannedDevices,
 } from 'react-native-awesome-library-bob';
 import {
   handleBluetoothConnectPermission,
@@ -22,16 +21,19 @@ export default function App() {
   const [pairedDevices, setPairedDevices] = useState<TBluetoothDevice[]>([]);
   const [scannedDevices, setScannedDevices] = useState<TBluetoothDevice[]>([]);
 
-  console.log(getScannedDevices());
-
-  const handleEnablingBluetooth = async () => {
-    handleBluetoothConnectPermission(async () => {
-      try {
-        await enableBluetooth();
-        console.log('Bluetooth enabled successfully');
-      } catch (error) {
-        console.log('Error enabling Bluetooth:', error);
-      }
+  const handleEnablingBluetooth = () => {
+    handleBluetoothConnectPermission(() => {
+      enableBluetooth(
+        () => {
+          console.log('Bluetooth enabled successfully');
+        },
+        (e) => {
+          console.log(
+            'Error enabling Bluetooth ===> ',
+            JSON.stringify(e, null, 2)
+          );
+        }
+      );
     });
   };
 
@@ -39,8 +41,6 @@ export default function App() {
     handleBluetoothConnectPermission(() => {
       const pairedDevicess = getPairedDevices();
       setPairedDevices(() => pairedDevicess);
-      // console.log('Paired devices:', JSON.stringify(pairedDevicess, null, 2));
-      // console.log('heyyyyyyyyyyyyyyyyyy');
     });
   };
 
@@ -117,15 +117,6 @@ export default function App() {
           }}
         >
           <Text style={styles.text}>Stop Scan</Text>
-        </Pressable>
-
-        <Pressable
-          style={styles.button}
-          onPress={() => {
-            console.log(JSON.stringify(getScannedDevices(), null, 2));
-          }}
-        >
-          <Text style={styles.text}>Get Scanned devices</Text>
         </Pressable>
       </View>
     </View>

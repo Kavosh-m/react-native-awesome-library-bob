@@ -13,7 +13,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.os.Bundle
 import android.util.Log
 
 @DoNotStrip
@@ -24,18 +23,17 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
 
   val appContext = NitroModules.applicationContext
   val packageManager: PackageManager = appContext?.packageManager!!
-  val bluetoothManager: BluetoothManager = appContext?.getSystemService(BluetoothManager::class.java)!!
+  val bluetoothManager: BluetoothManager =
+    appContext?.getSystemService(BluetoothManager::class.java)!!
   val bluetoothAdapter: BluetoothAdapter? = bluetoothManager.getAdapter()
-  //if (bluetoothAdapter == null) {
-    // Device doesn't support Bluetooth
-  //}
 
   private var devicesFound = mutableSetOf<TBluetoothDevice>()
   lateinit var onChangedScannedDevices: (devices: Array<TBluetoothDevice>) -> Unit
+  lateinit var btEnableSuccessCallback: () -> Unit
+  lateinit var btEnableErrorCallback: (e: TError) -> Unit
 
-  override fun getScannedDevices(): Array<TBluetoothDevice> {
-    return devicesFound.toTypedArray()
-  }
+
+  private var pendingPromise: Promise<Unit>? = null
 
   override fun isBluetoothClassicFeatureAvailable(): Boolean {
     return packageManager.hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)
@@ -45,46 +43,57 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
     return bluetoothAdapter?.isEnabled ?: false
   }
 
-  private var pickerPromise: Promise<Unit>? = null
+//  private var btEnablePromise = Promise
 
   private val activityEventListener =
-      object : BaseActivityEventListener() {
-          override fun onActivityResult(
-              activity: Activity?,
-              requestCode: Int,
-              resultCode: Int,
-              intent: Intent?
-          ) {
-              if (requestCode == REQUEST_ENABLE_BT) {
-                  pickerPromise?.let { promise: Promise<Unit> ->
-                      when (resultCode) {
-                          Activity.RESULT_CANCELED ->
-                              throw Error("Enabling bluetooth was cancelled")
-                          Activity.RESULT_OK -> {
-                              promise.resolve(Unit)
-                          }
-                      }
+    object : BaseActivityEventListener() {
+      override fun onActivityResult(
+        activity: Activity?,
+        requestCode: Int,
+        resultCode: Int,
+        intent: Intent?
+      ) {
+        if (requestCode == REQUEST_ENABLE_BT) {
+          when (resultCode) {
+            Activity.RESULT_CANCELED -> {
+              btEnableErrorCallback(
+                TError(
+                  code = BT_ENABLE_ERR_CODE,
+                  message = BT_ENABLE_ERR_MSG
+                )
+              )
+            }
 
-                      pickerPromise = null
-                  }
-              } else {
-                throw Error("Wrong Intent!")
-              }
+            Activity.RESULT_OK -> {
+              btEnableSuccessCallback()
+            }
+
+            else -> {
+              //do something
+            }
           }
+
+        } else {
+          throw Error("Wrong Intent!")
+        }
       }
+    }
 
   init {
-      appContext?.addActivityEventListener(activityEventListener)
+    appContext?.addActivityEventListener(activityEventListener)
   }
 
-  override fun enableBluetooth(): Promise<Unit> {
-    return Promise.async {
-      val currentActivity: Activity = appContext?.getCurrentActivity()!!
+  override fun enableBluetooth(successCallback: () -> Unit, errorCallback: (e: TError) -> Unit) {
+    btEnableSuccessCallback = successCallback
+    btEnableErrorCallback = errorCallback
 
-      if (bluetoothAdapter?.isEnabled == false) {
-        val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
-        currentActivity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
-      }
+    val currentActivity: Activity = appContext?.getCurrentActivity()!!
+
+    if (bluetoothAdapter?.isEnabled == false) {
+      val enableBtIntent = Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE)
+      currentActivity.startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT)
+    } else {
+      btEnableSuccessCallback()
     }
   }
 
@@ -92,30 +101,16 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
     val list = mutableListOf<TBluetoothDevice>()
     val pairedDevices = bluetoothAdapter?.bondedDevices
     pairedDevices?.forEach { device ->
-      //Log.d("DEVICE_NAME","${device.name}")
-      list.add( TBluetoothDevice(
-        name = device.name,
-        macAddress = device.address, // MacAddress
-        type = device.type.toDouble(),
-        alias = device.alias
-      ))
+      list.add(
+        TBluetoothDevice(
+          name = device?.name ?: "",
+          macAddress = device.address, // MacAddress
+          type = device.type.toDouble(),
+          alias = device.alias
+        )
+      )
     }
     return list.toTypedArray()
-  }
-
-  // Create a BroadcastReceiver for ACTION_DISCOVERY_STARTED.
-  private val receiverStart = object : BroadcastReceiver() {
-
-    override fun onReceive(context: Context, intent: Intent) {
-      val action: String = intent.action!!
-      when(action) {
-        BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
-          Log.d("DISCOVERY", "Bluetooth Scanning started...")
-          /*val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-          appContext?.registerReceiver(receiver, filter)*/
-        }
-      }
-    }
   }
 
   // Create a BroadcastReceiver for ACTION_FOUND.
@@ -123,14 +118,20 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
 
     override fun onReceive(context: Context, intent: Intent) {
       val action: String = intent.action!!
-      when(action) {
+      when (action) {
+        BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
+          // discovering remote devices started...
+        }
+
+        BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+          // discovering remote devices finished...
+        }
+
         BluetoothDevice.ACTION_FOUND -> {
           // Discovery has found a device. Get the BluetoothDevice
           // object and its info from the Intent.
           val device: BluetoothDevice =
             intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)!!
-//          val deviceName = device.name
-//          val deviceHardwareAddress = device.address // MAC address
 
           devicesFound.add(
             TBluetoothDevice(
@@ -142,21 +143,21 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
           )
 
           onChangedScannedDevices(devicesFound.toTypedArray())
-
-//          Log.d("DEVICE_FOUND", "Name => ${deviceName} *** MacAddress => ${deviceHardwareAddress}")
         }
       }
     }
   }
 
   override fun startScan(fetchRemoteDevices: (devices: Array<TBluetoothDevice>) -> Unit) {
-//      Log.d("SCAN_RES", "res is ==> ${bluetoothAdapter?.startDiscovery()}")
     onChangedScannedDevices = fetchRemoteDevices
 
     bluetoothAdapter?.startDiscovery()
 
     val filterStart = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_STARTED)
-    appContext?.registerReceiver(receiverStart, filterStart)
+    appContext?.registerReceiver(receiver, filterStart)
+
+    val filterFinish = IntentFilter(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+    appContext?.registerReceiver(receiver, filterFinish)
 
     val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
     appContext?.registerReceiver(receiver, filter)
@@ -167,20 +168,17 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
     bluetoothAdapter?.cancelDiscovery()
   }
 
-//  fun onCreate(savedInstanceState: Bundle?) {
-    // Register for broadcasts when a device is discovered.
-    /*val filter = IntentFilter(BluetoothDevice.ACTION_FOUND)
-    appContext?.registerReceiver(receiver, filter)*/
-//  }
+  /*  fun onDestroy() {
+  //    appContext?.onDestroy()
 
-/*  fun onDestroy() {
-//    appContext?.onDestroy()
-
-    // Don't forget to unregister the ACTION_FOUND receiver.
-    appContext?.unregisterReceiver(receiver)
-  }*/
+      // Don't forget to unregister the ACTION_FOUND receiver.
+      appContext?.unregisterReceiver(receiver)
+    }*/
 
   companion object {
     const val REQUEST_ENABLE_BT = 1
+    const val BT_ENABLE_ERR_CODE = "USER_CANCELED"
+    const val BT_ENABLE_ERR_MSG = "User cancel or denied enabling bluetooth"
+
   }
 }

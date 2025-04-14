@@ -7,12 +7,16 @@ export type TBluetoothDevice = {
   alias?: string;
 };
 
+export type TError = { code: string; message: string };
+
 export interface AwesomeLibraryBob
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
-  getScannedDevices(): TBluetoothDevice[];
   isBluetoothClassicFeatureAvailable(): boolean;
   isBluetoothOn(): boolean;
-  enableBluetooth(): Promise<void>;
+  enableBluetooth(
+    successCallback: () => void,
+    errorCallback: (e: TError) => void
+  ): void;
   getPairedDevices(): TBluetoothDevice[];
   startScan(fetchRemoteDevices: (devices: TBluetoothDevice[]) => void): void;
   stopScan(): void;
