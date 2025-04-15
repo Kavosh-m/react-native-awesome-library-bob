@@ -29,8 +29,10 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
 
   private var devicesFound = mutableSetOf<TBluetoothDevice>()
   lateinit var onChangedScannedDevices: (devices: Array<TBluetoothDevice>) -> Unit
+  lateinit var onChangedScanMoode: (mods: TScanMod) -> Unit
   lateinit var btEnableSuccessCallback: () -> Unit
   lateinit var btEnableErrorCallback: (e: TError) -> Unit
+  lateinit var onChangeBtState: (e: TBLState) -> Unit
 
 
   private var pendingPromise: Promise<Unit>? = null
@@ -121,10 +123,12 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
       when (action) {
         BluetoothAdapter.ACTION_DISCOVERY_STARTED -> {
           // discovering remote devices started...
+          onChangedScanMoode(TScanMod(isDiscoveryStarted = true))
         }
 
         BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
           // discovering remote devices finished...
+          onChangedScanMoode(TScanMod(isDiscoveryStarted = false))
         }
 
         BluetoothDevice.ACTION_FOUND -> {
@@ -148,8 +152,12 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
     }
   }
 
-  override fun startScan(fetchRemoteDevices: (devices: Array<TBluetoothDevice>) -> Unit) {
+  override fun startScan(
+    fetchRemoteDevices: (devices: Array<TBluetoothDevice>) -> Unit,
+    onChangedScanMode: (mods: TScanMod) -> Unit
+  ) {
     onChangedScannedDevices = fetchRemoteDevices
+    onChangedScanMoode = onChangedScanMode
 
     bluetoothAdapter?.startDiscovery()
 
@@ -166,6 +174,66 @@ class AwesomeLibraryBob : HybridAwesomeLibraryBobSpec() {
 
   override fun stopScan() {
     bluetoothAdapter?.cancelDiscovery()
+  }
+
+  private val btReceiver = object : BroadcastReceiver() {
+
+    override fun onReceive(context: Context, intent: Intent) {
+      val action: String = intent.action!!
+      when(action) {
+        BluetoothAdapter.ACTION_STATE_CHANGED -> {
+          val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)
+          when(state) {
+            BluetoothAdapter.STATE_ON -> {
+              onChangeBtState(
+                TBLState(
+                  isBluetoothOn = true,
+                  isBluetoothTurningOn = false,
+                  isBluetoothTurningOff = false
+                )
+              )
+            }
+
+            BluetoothAdapter.STATE_OFF -> {
+              onChangeBtState(
+                TBLState(
+                  isBluetoothOn = false,
+                  isBluetoothTurningOn = false,
+                  isBluetoothTurningOff = false
+                )
+              )
+            }
+
+            BluetoothAdapter.STATE_TURNING_ON -> {
+              onChangeBtState(
+                TBLState(
+                  isBluetoothOn = false,
+                  isBluetoothTurningOn = true,
+                  isBluetoothTurningOff = false
+                )
+              )
+            }
+
+            BluetoothAdapter.STATE_TURNING_OFF -> {
+              onChangeBtState(
+                TBLState(
+                  isBluetoothOn = false,
+                  isBluetoothTurningOn = false,
+                  isBluetoothTurningOff = true
+                )
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+
+  override fun bluetoothStateEventListener(onChanged: (e: TBLState) -> Unit) {
+    onChangeBtState = onChanged
+
+    val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
+    appContext?.registerReceiver(btReceiver, filter)
   }
 
   /*  fun onDestroy() {

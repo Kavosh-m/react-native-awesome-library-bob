@@ -1,25 +1,47 @@
-import { Text, View, StyleSheet, Pressable, ScrollView } from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Pressable,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import {
   enableBluetooth,
   isBluetoothClassicFeatureAvailable,
-  isBluetoothOn,
   getPairedDevices,
   startScan,
   stopScan,
+  bluetoothStateEventListener,
 } from 'react-native-awesome-library-bob';
 import {
   handleBluetoothConnectPermission,
   handleBluetoothScanPermission,
 } from './utils/permissions';
-import { useState } from 'react';
-import type { TBluetoothDevice } from '../../src/AwesomeLibraryBob.nitro';
+import { useEffect, useState } from 'react';
+import type {
+  TBLState,
+  TBluetoothDevice,
+} from '../../src/AwesomeLibraryBob.nitro';
 
-const result3 = isBluetoothClassicFeatureAvailable();
-const result4 = isBluetoothOn();
+const isBluetoothFeatureAvailable = isBluetoothClassicFeatureAvailable();
 
 export default function App() {
   const [pairedDevices, setPairedDevices] = useState<TBluetoothDevice[]>([]);
   const [scannedDevices, setScannedDevices] = useState<TBluetoothDevice[]>([]);
+  const [isDiscoveryStarted, setIsDiscoveryStarted] = useState(false);
+  const [btState, setBtState] = useState<TBLState>({
+    isBluetoothOn: false,
+    isBluetoothTurningOff: false,
+    isBluetoothTurningOn: false,
+  });
+
+  useEffect(() => {
+    bluetoothStateEventListener((e) => {
+      setBtState((prev) => ({ ...prev, ...e }));
+      console.log('Bluetooth state ===> ', JSON.stringify(e, null, 2));
+    });
+  }, []);
 
   const handleEnablingBluetooth = () => {
     handleBluetoothConnectPermission(() => {
@@ -47,21 +69,32 @@ export default function App() {
   const handleStartScanDevices = () => {
     handleBluetoothConnectPermission(() => {
       handleBluetoothScanPermission(() => {
-        startScan((devices) => {
-          console.log('Scanned devices:', JSON.stringify(devices, null, 2));
-          setScannedDevices(() => devices);
-        });
+        startScan(
+          (devices) => {
+            console.log('Scanned devices:', JSON.stringify(devices, null, 2));
+            setScannedDevices(() => devices);
+          },
+          (mods) => {
+            console.log('is discovery started ===> ', mods.isDiscoveryStarted);
+            setIsDiscoveryStarted(mods.isDiscoveryStarted);
+          }
+        );
       });
     });
   };
 
+  if (!isBluetoothFeatureAvailable) {
+    return (
+      <View style={styles.container}>
+        <Text>Bluetooth is not available on this device</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text
-        style={styles.text}
-      >{`Bluetooth is ${result3 ? 'supported' : 'not supported'} on this device.`}</Text>
       <Text style={styles.text}>
-        {`Bluetooth is ${result4 ? 'On' : 'Off'}`}
+        {`Bluetooth is ${btState.isBluetoothOn ? 'On' : btState.isBluetoothTurningOn ? 'turning On' : btState.isBluetoothTurningOff ? 'turning Off' : 'Off'}`}
       </Text>
       <Pressable style={styles.button} onPress={handleEnablingBluetooth}>
         <Text style={styles.text}>Enable Bluetooth</Text>
@@ -91,7 +124,14 @@ export default function App() {
       {scannedDevices?.length > 0 && (
         <View style={styles.flexWrapper}>
           <ScrollView style={styles.flexWrapper}>
-            <Text style={[styles.text, styles.title]}>Scanned Devices:</Text>
+            <View
+              style={{ flexDirection: 'row', justifyContent: 'space-between' }}
+            >
+              <Text style={[styles.text, styles.title]}>Scanned Devices:</Text>
+              {isDiscoveryStarted && (
+                <ActivityIndicator size="large" color="white" />
+              )}
+            </View>
             {scannedDevices.map((device, index) => (
               <View key={index} style={styles.deviceWrapper}>
                 <Text style={styles.text}>{`Device Name: ${device.name}`}</Text>
@@ -106,7 +146,11 @@ export default function App() {
 
       <View style={styles.rowWrapper}>
         {/**start scan */}
-        <Pressable style={styles.button} onPress={handleStartScanDevices}>
+        <Pressable
+          style={[styles.button, { opacity: isDiscoveryStarted ? 0.4 : 1 }]}
+          onPress={handleStartScanDevices}
+          disabled={isDiscoveryStarted}
+        >
           <Text style={styles.text}>Scan Devices</Text>
         </Pressable>
 

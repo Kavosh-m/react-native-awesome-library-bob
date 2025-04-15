@@ -8,6 +8,12 @@ export type TBluetoothDevice = {
 };
 
 export type TError = { code: string; message: string };
+export type TScanMod = { isDiscoveryStarted: boolean };
+export type TBLState = {
+  isBluetoothOn: boolean;
+  isBluetoothTurningOn: boolean;
+  isBluetoothTurningOff: boolean;
+};
 
 export interface AwesomeLibraryBob
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
@@ -18,6 +24,10 @@ export interface AwesomeLibraryBob
     errorCallback: (e: TError) => void
   ): void;
   getPairedDevices(): TBluetoothDevice[];
-  startScan(fetchRemoteDevices: (devices: TBluetoothDevice[]) => void): void;
+  startScan(
+    fetchRemoteDevices: (devices: TBluetoothDevice[]) => void,
+    onChangedScanMode: (mods: TScanMod) => void
+  ): void;
   stopScan(): void;
+  bluetoothStateEventListener(onChanged: (e: TBLState) => void): void;
 }
