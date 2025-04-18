@@ -3,6 +3,7 @@ import type {
   AwesomeLibraryBob,
   TBLState,
   TBluetoothDevice,
+  TBondState,
   TError,
   TScanMod,
 } from './AwesomeLibraryBob.nitro';
@@ -50,4 +51,15 @@ export function bluetoothStateEventListener(
   onChanged: (e: TBLState) => void
 ): void {
   return AwesomeLibraryBobHybridObject.bluetoothStateEventListener(onChanged);
+}
+
+export function pairDevice(
+  macAddress: string,
+  onChanged: (e: TBondState) => void
+): void {
+  return AwesomeLibraryBobHybridObject.pairDevice(macAddress, onChanged);
+}
+
+export function connectToDevice(macAddress: string): void {
+  return AwesomeLibraryBobHybridObject.connectToDevice(macAddress);
 }

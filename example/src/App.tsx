@@ -5,6 +5,7 @@ import {
   Pressable,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
 import {
   enableBluetooth,
@@ -13,6 +14,8 @@ import {
   startScan,
   stopScan,
   bluetoothStateEventListener,
+  pairDevice,
+  connectToDevice,
 } from 'react-native-awesome-library-bob';
 import {
   handleBluetoothConnectPermission,
@@ -25,6 +28,13 @@ import type {
 } from '../../src/AwesomeLibraryBob.nitro';
 
 const isBluetoothFeatureAvailable = isBluetoothClassicFeatureAvailable();
+
+const deviceTypeRef: Record<string, string> = {
+  ['0']: 'Unknown',
+  ['1']: 'Classic - BR/EDR devices',
+  ['2']: 'Low Energy - LE-only',
+  ['3']: 'Dual Mode - BR/EDR/LE',
+};
 
 export default function App() {
   const [pairedDevices, setPairedDevices] = useState<TBluetoothDevice[]>([]);
@@ -83,6 +93,16 @@ export default function App() {
     });
   };
 
+  const handleConnectDevice = (device: TBluetoothDevice) => {
+    pairDevice(device.macAddress, (e) => {
+      console.log('Pairing state ===> ', JSON.stringify(e, null, 2));
+      if (e.isPaired) {
+        handleGetPairedDevices();
+        // connectToDevice(device.macAddress);
+      }
+    });
+  };
+
   if (!isBluetoothFeatureAvailable) {
     return (
       <View style={styles.container}>
@@ -114,6 +134,9 @@ export default function App() {
                 <Text
                   style={styles.text}
                 >{`Device MacAddress: ${device.macAddress}`}</Text>
+                <Text
+                  style={styles.text}
+                >{`Device Type: ${deviceTypeRef[device.type]}`}</Text>
               </View>
             ))}
           </ScrollView>
@@ -134,10 +157,22 @@ export default function App() {
             </View>
             {scannedDevices.map((device, index) => (
               <View key={index} style={styles.deviceWrapper}>
-                <Text style={styles.text}>{`Device Name: ${device.name}`}</Text>
-                <Text
-                  style={styles.text}
-                >{`Device MacAddress: ${device.macAddress}`}</Text>
+                <TouchableOpacity
+                  style={styles.deviceWrapper}
+                  onPress={() => {
+                    handleConnectDevice(device);
+                  }}
+                >
+                  <Text
+                    style={styles.text}
+                  >{`Device Name: ${device.name}`}</Text>
+                  <Text
+                    style={styles.text}
+                  >{`Device MacAddress: ${device.macAddress}`}</Text>
+                  <Text
+                    style={styles.text}
+                  >{`Device Type: ${deviceTypeRef[device.type]}`}</Text>
+                </TouchableOpacity>
               </View>
             ))}
           </ScrollView>

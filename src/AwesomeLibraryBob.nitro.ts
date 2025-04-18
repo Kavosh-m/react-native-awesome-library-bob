@@ -14,6 +14,7 @@ export type TBLState = {
   isBluetoothTurningOn: boolean;
   isBluetoothTurningOff: boolean;
 };
+export type TBondState = { isPaired: boolean; isPairing: boolean };
 
 export interface AwesomeLibraryBob
   extends HybridObject<{ ios: 'swift'; android: 'kotlin' }> {
@@ -30,4 +31,6 @@ export interface AwesomeLibraryBob
   ): void;
   stopScan(): void;
   bluetoothStateEventListener(onChanged: (e: TBLState) => void): void;
+  pairDevice(macAddress: string, onChanged: (e: TBondState) => void): void;
+  connectToDevice(macAddress: string): void;
 }
