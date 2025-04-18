@@ -15,7 +15,6 @@ import {
   stopScan,
   bluetoothStateEventListener,
   pairDevice,
-  connectToDevice,
 } from 'react-native-awesome-library-bob';
 import {
   handleBluetoothConnectPermission,
