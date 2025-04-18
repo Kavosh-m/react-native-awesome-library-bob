@@ -1,6 +1,6 @@
 {
   "name": "react-native-awesome-library-bob",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "hh",
   "source": "./src/index.tsx",
   "main": "./lib/module/index.js",
